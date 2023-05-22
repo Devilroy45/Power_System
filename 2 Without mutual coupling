@@ -1,0 +1,79 @@
+clear
+inputdata=[3 0 0.0 1.25 0 0 0.0 0.0
+ 3 2 0.0 0.16 0 3 0.0 -0.2667
+ 3 1 0.0 0.16 0 2 0.0 -0.2667
+ 2 1 0.0 0.125 0 0 0.0 0.0
+ 4 2 0.0 0.2 0 0 0.0 0.0
+ 4 1 0.0 0.4 0 0 0.0 0.0
+ 4 0 0.0 1.25 0 0 0.0 0.0
+];
+from_bus=inputdata(:,1); % From bus
+to_bus=inputdata(:,2); % To bus
+R=inputdata(:,3); % Resistance
+X=inputdata(:,4); % Reactance
+b_half=inputdata(:,5); % Line charging 
+admittance
+m_no=inputdata(:,6);
+m_R=inputdata(:,7); % Mutual resistance
+m_X=inputdata(:,8); % Mutual reactance
+branches=length(to_bus); % Number of branches
+nodes=max(max(from_bus),max(to_bus)); % Number of buses
+% ----------Formation of impedances------
+Z=complex(R,X); % Impedance, Z=R+jX
+m_Z=complex(m_R,m_X); % Mutual impedance,if any
+% ----------Formation of primitive 
+impedance matrix----------
+zpri=zeros(branches);
+for k=1:branches
+zpri(k,k)=Z(k);
+if m_no(k)~=0 % Checks for mutual 
+coupling
+zpri(k,m_no(k))=m_Z(k);
+zpri(m_no(k),k)=m_Z(k);
+end
+end
+% ---------Primary (primitive) admittance matrix----------
+ypri=inv(zpri)+diag(1j*b_half/2); % 
+bhalf added only to diagonal elements
+% ----------Formation of bus incidence matrix, A----------
+A=zeros(nodes,branches);
+for m=1:nodes
+for n=1:branches
+if from_bus(n)==m
+A(m,n)=1;
+end
+if to_bus(n)==m
+A(m,n)=-1;
+end
+end
+end
+ybus=A*ypri*A'; % Bus admittance matrix by singular transformation
+%-----------Adding bhalf to off diagonal elements-------------------
+bhalf_mat=zeros(nodes);
+from_bus=from_bus+1; % If node 0 is present
+to_bus=to_bus+1; % If node 0 is present
+for m=1:nodes
+bhalf_mat(from_bus(m),to_bus(m))=1j*b_half(m)/2;
+bhalf_mat(to_bus(m),from_bus(m))=1j*b_half(m)/2;
+end
+for m=1:nodes
+for n=1:nodes
+ybus(m,n)=ybus(m,n)+bhalf_mat(m,n);
+end
+end
+%--------Display output on screen----------
+Bus_Incidence_matrix_A=A;
+Primary_Admittances_matrix=ypri;
+Y_bus=ybus;
+% ----------To print the output in a file-----
+out=fopen('ybus_singtrans_output.txt','wt');
+fprintf(out,'Y bus is\n');
+for m=1:nodes
+for n=1:nodes
+fprintf(out,'%f(+)j%f\t',real(ybus(m,n)),imag(ybus(m,n)));
+end
+fprintf(out,'\n');
+end
+fclose(out);
+disp(Y_bus);
+%------------End of program-----------------
