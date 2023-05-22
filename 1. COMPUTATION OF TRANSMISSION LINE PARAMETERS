@@ -1,0 +1,14 @@
+clc
+clear
+d = input('diameter');
+r = input('radius');
+r1 = 0.7788*r;
+f = input('frequency');
+Lext = 2*10^-7*(log (d/r));
+L1 = 0.2*(log (d/r1));
+Ltotal = 0.4*(log (d/r1));
+Xl = 2*3.14*f*Ltotal;
+Cn = 2*3.14*8.854*10^-12/(log (d/r));
+Xc = 1/(2*f*Cn*4*3.14*10^-7);
+fprintf('XC=');
+disp(Xc);
