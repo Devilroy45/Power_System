@@ -1,0 +1,92 @@
+clc
+clear
+Ps = input('Enter mechanical power: ');
+E = input('Enter generator voltage: ');
+M = input('Enter moment of inertia: ');
+Xe = input('Enter generator reactance: ');
+XLine = input('Enter transmission line reactance: ');
+xbus = input('Enter line to bus reactance, if given, else,enter 0: ');
+H = input('Enter inertia constant: ');
+V=1; % Infinite bus voltage, 1 by 
+default
+frq=50; % Frequency in Hz
+choice=input('Enter 1 for fault at the beginning, enter 2 for fault at the middle \n');
+switch choice
+ case 1
+ X2=inf; % 'X2' is reactance 
+during fault
+ case 2
+ xline21=XLine/2; % Assuming fault is 
+exactly in the middle of the line
+ xline22=XLine/2;
+ %--------Star to Delta------------------------------
+ A = XLine*xline21/(XLine+xline21+xline22);
+ B = XLine*xline22/(XLine+xline21+xline22);
+ C = xline21*xline22/(XLine+xline21+xline22);
+ %-------Add generator, line reactances--------------
+ P = Xe+A;
+ Q = B+xbus;
+ R = C;
+ %-------Delta to Star-------------------------------
+ X2=(P*Q+Q*R+P*R)/R;
+ otherwise
+ disp('Wrong input');
+end
+X1=Xe+XLine/2+xbus; % 'X1' is pre-fault reactance
+X3=Xe+XLine+xbus; % 'X3' is post fault reactance
+Pm1=E*V/X1; % 'Pm1' is pre-fault power
+Pm2=E*V/X2; % 'Pm2' is power during 
+fault
+Pm3=E*V/X3; % 'Pm3' is post fault 
+power
+ddelta=0;
+conv=180/pi; % Conversion between degrees and radians
+dt=0.05; % Duration in seconds
+it=1; % Iteration count
+del(it)=asin(Ps/Pm1); % Power angle. del(1) is initial power angle
+t(it)=0; % 't' is time. t1=0
+fprintf('Sustained fault\n');
+fprintf('Time\t\tDelta');
+fprintf('\n--------------------------------------');
+while (t(it)<=1.0)
+ Pm=Pm2; % 'Pm2' is maximum power 
+at fault condition
+ Pe=Pm*sin(del(it)); % 'Pe' is electrical power
+ Pa=(Ps-Pe)/2; % 'Pa' is accelerated 
+power
+ ft=(dt^2)*Pa/(M*conv); % 'ft' is fault time
+ ddelta=ddelta+ft;
+ fprintf('\n %5.2f\t\t%5.3f',t(it),del(it)*conv);
+ it=it+1;
+ t(it)=t(it-1)+dt;
+ del(it)=del(it-1)+ddelta;
+end
+fprintf('\n-------------------------\n');
+% ----------Critical clearing angle and time---------
+delm=pi-asin(Ps/Pm3);
+delcritical=(Ps*(delm-del(1))-Pm2*cos(del(1))+Pm3*cos(delm))/(Pm3-Pm2);
+crit=acos(delcritical); % Critical clearing 
+angle in radians
+delcc=acosd(delcritical); % 
+Critical clearing angle in degrees
+tc=sqrt(2*H*(crit-del(1))/(Ps*pi*frq)); % Critical 
+clearing time in seconds
+% ----------Graph between delta and time---------
+plot(t,del*conv,'b');
+title('Swing Curve for Sustained Fault');
+xlabel('Time in seconds');
+ylabel('Delta in degrees');
+grid;
+% ----------Print output----------
+fprintf('\nPrefault:\n');
+fprintf('\tReactance: %0.2f pu\n', X1);
+fprintf('\tMaximum power: %0.2f pu\n', Pm1);
+fprintf('\nDuring fault:\n');
+fprintf('\tReactance: %0.2f pu\n', X2);
+fprintf('\tMaximum power: %0.2f pu\n', Pm2);
+fprintf('\nPost fault:\n');
+fprintf('\tReactance: %0.2f pu\n', X3);
+fprintf('\tMaximum power: %0.2f pu\n', Pm3);
+fprintf('\nCritical clearing time: %0.2f seconds',tc);
+fprintf('\nCritical clearing angle: %0.2f degrees\n\n',delcc);
+%-----------End_Program-------
