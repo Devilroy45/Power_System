@@ -1,0 +1,64 @@
+clc
+clear
+z=complex(20,50); % Series impedance, 20+j50 ohms
+y=complex(0,310e-6); % Shunt admittance, -j0.00031 ohms
+Vrl=complex(132,0); % Receiving end line-line voltage, 132 kV
+Ir=complex(105,-50.6); % Receiving end line current, 105-j50.6 A
+c=input('Enter 1 for medium T, 2 for medium PI, 3 for long, 4 forshort transmission line: ');
+switch(c)
+case 1
+fprintf('\nNominal T Medium transmission line\n');
+A=1+(y*z/2);
+B=z+(z*z*y/4);
+C=y;
+D=A;
+case 2
+fprintf('\nNominal pi Medium transmission line\n');
+A=1+(y*z/2);
+B=z;
+C=y+(z*y*y/4);
+D=A;
+case 3
+fprintf('\nLong transmission line\n');
+A=1+(y*z/2);
+B=z+(y*z*z/6);
+C=y+(y*y*z)/6;
+D=A;
+case 4
+fprintf('\nShort transmission line\n');
+A=1;
+B=z;
+C=0;
+D=1;
+otherwise
+fprintf('Wrong entry\n\n');
+end
+Vr=(Vrl*1e3)/sqrt(3); % Receiving end phase voltage, V
+Vs=A*Vr+B*Ir; % Sending end voltage
+Is=C*Vr+D*Ir; % Sending end current
+pfr=cos(angle(Vrl)-angle(Ir)); % Recieving end power factor
+pfs=cos(angle(Vs)-angle(Is)); % Sending end power factor
+Ps=3*Vs*Is*pfs; % Sending end power
+Pr=3*Vr*Ir*pfr; % Receiving end power
+Pr_mag=abs(Pr);
+Ps_mag=abs(Ps);
+Vr_mag=abs(Vr);
+vol_reg=(abs(Vs/A)-Vr_mag)/Vr_mag*100;
+eff=(Pr_mag/Ps_mag)*100;
+%---------------Display of output--------------------
+fprintf('A=');
+disp(A);
+fprintf('B=');
+disp(B);
+fprintf('C=');
+disp(C);
+fprintf('D=');
+disp(D);
+fprintf('AD-BC=%d\n\n',A*D-B*C);
+fprintf('Sending end voltage: %f kV\n', Vs/1e3);
+fprintf('Receiving end voltage: %f kV\n', Vr_mag/1e3);
+fprintf('Sending end power factor: %f', pfs);
+fprintf('\nPercentage voltage regulation: %6.3f%%',vol_reg);
+fprintf('\n\nLoss is %f MW', (Ps_mag-Pr_mag)*1e-6);
+fprintf('\nEfficiency: %6.2f%%',eff);
+fprintf('\n\n');
