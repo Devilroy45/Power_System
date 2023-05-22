@@ -1,0 +1,103 @@
+clear
+clc
+fault_position=input('Enter 1 for fault at end of line,2 for fault in middle of line:');
+xe=input('Enter generator reactance: ');
+xl1=input('Enter line 1 reactance: ');
+xl2=xl1; % Assuming both lines have 
+exactly same reactance
+E=input('Enter generator voltage: ');
+Ps=input('Enter input power: ');
+H= input('Enter inertia constant: ');
+V=1; % Infinite bus voltage, 1 pu by 
+default
+freq=50; % Assuming frequency to be 50 Hz
+d=0:0.01:180;
+%--------Prefault---------------------
+X1=xe+(xl1*xl2/(xl1+xl2));
+Pm1=E*V/X1;
+f_pre=Pm1*sind(d);
+d0_d=asind(Ps/Pm1);
+d0_r=asin(Ps/Pm1);
+%--------During fault--------------------
+switch fault_position
+case 1
+X2=inf; % 'X2' is fault reactance for fault at end of line
+case 2 % For fault in middle of one line
+xl21=input('Enter one of the split line values: ');
+xl22=xl2-xl21;
+%--------Star to Delta-----------------
+a=xl1;
+b=xl21; % One part of the split line
+c=xl22; % Other part of the split line
+A=xe+a*b/(a+b+c); % Add generator reactance
+B=a*c/(a+b+c);
+C=b*c/(a+b+c);
+%-------Delta to Star--------------
+X2=(A*B+B*C+A*C)/C;
+otherwise
+disp('Wrong input');
+end
+Pm2=E*V/X2;
+f_dur=Pm2*sind(d);
+%--------Post fault-----------------------
+X3=xe+xl1;
+Pm3=E*V/X3;
+f_post=Pm3*sind(d);
+dmax=pi-asin(Ps/Pm3);
+dmax_d=dmax*180/pi; % To convert to degrees
+%----------Critical clearing angle----------------
+nume=Ps*(dmax-d0_r)-Pm2*cosd(d0_d)+Pm3*cos(dmax);
+denom=Pm3-Pm2;
+ratio=nume/denom;
+dc=acosd(ratio);
+dc_r=dc*pi/180; % To convert to radians
+%----------Critical clearing time------------
+tc=sqrt(2*H*(dc_r-d0_r)/(pi*freq*Ps));
+%---------Plot curves-----------------------
+plot(d,Ps,'k'); % Input line
+hold on
+plot(d,f_pre,'g'); % Prefault curve
+hold on
+plot(d,f_dur,'r'); % During fault curve
+hold on
+plot(d,f_post,'m'); % Post fault curve
+hold on
+st_d0=[d0_d d0_d]; % Plot initial angle line
+end_d0=[0 Ps];
+st_dmax=[dmax_d dmax_d]; % Plot maximum angle line
+end_dmax=[0 Ps];
+dc_point=Pm3*sind(dc);
+st_dc=[dc dc];
+end_dc=[0 dc_point]; % Plot critical 
+clearing angle line
+plot(st_d0,end_d0,'g',st_dmax,end_dmax,'m', st_dc,end_dc,'b');
+hold on
+if fault_position == 1
+title('Equal-area criterion applied to the fault at end of one of the lines');
+else
+title('Equal-area criterion applied to the fault in middle of the lines');
+end
+xlabel('Power angle, degree');
+ylabel('Power, per unit');
+axis([0 180 0 Pm1*1.1]);
+%---------------Fill----------------------------
+a1_x=d0_d:0.01:dc;
+a1_y=Pm2*sind(a1_x);
+a1_x1=[d0_d a1_x dc];
+a1_y1=[Ps a1_y Ps];
+a1_color=[1 0 1];
+fill(a1_x1,a1_y1,'b'); % Fill area A1
+a2_x=dc:0.01:dmax_d;
+a2_y=Pm3*sind(a2_x);
+a2_x1=[dc a2_x dmax_d];
+a2_y1=[Ps a2_y Ps];
+fill(a2_x1,a2_y1,'m'); % Fill area A2
+grid
+%-----------Output----------------------------
+fprintf('\n\nPrefault:\n\tReactance: %0.2f\n\tMaximum power: %0.2f\n\n',X1, Pm1');
+fprintf('During fault:\n\tReactance: %0.2f\n\tMaximum power: %0.2f\n\n', X2, Pm2');
+fprintf('Post fault:\n\tReactance:%0.2f\n\tMaximum power: %0.2f\n\n', X3, Pm3');
+fprintf('Initial angle, d0 is %0.2f degrees or %f radians\n', d0_d,d0_r);
+fprintf('Maximum angle of swing is %0.2f degrees\n\n', dmax_d);
+fprintf('Critical clearing angle is %0.2fdegrees\n', dc);
+fprintf('Critical clearing time is %0.2fseconds\n\n', tc);
