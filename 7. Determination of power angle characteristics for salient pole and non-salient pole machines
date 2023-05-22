@@ -1,0 +1,62 @@
+clc
+clear
+sal=input('Enter 1 if it is a salient pole, 2 if it is a non-salient pole: ');
+P=input('Power in MW: ');
+pf=input('Power Factor: ');
+V_line=input('Line to line voltage in kV: ');
+Xd=input('Xd in ohms: ');
+if sal == 1
+Xq=input('Xq in ohms: ');
+elseif sal == 2
+Xq=Xd;
+else
+return;
+end
+Vph=V_line*1000/sqrt(3); 
+phi=acos(pf); 
+Q=P*tan(phi); 
+I=(P-1j*Q)*1000000/(3*Vph);
+E=Vph+(1j*I*Xq);
+Id=I*sin(angle(E)-angle(I));
+Id_mag=abs(Id);
+Ef_mag=abs(E)+((Xd-Xq)*Id_mag);
+reg=(Ef_mag-abs(Vph))*100/abs(Vph);
+delta=-180:1:180;
+delta_rad=delta*(pi/180);
+act_max=Ef_mag*Vph/Xd;
+reluct_max=(Vph)^2*(Xd-Xq)/(2*Xd*Xq);
+Pp=act_max*sin(delta_rad);
+Pr=reluct_max*sin(2*delta_rad);
+net_Pp=3*Pp/1000000;
+net_Pr=3*Pr/1000000;
+Pe=Pp+Pr;
+net_Pe=3*Pe/1000000; 
+a=4*reluct_max;
+b=act_max;
+c=-2*reluct_max;
+d2=(-b+sqrt(b^2-4*a*c))/(2*a);
+dmax=acosd(d2);
+if sal==2
+dmax=90;
+end
+if sal==1
+plot(delta,net_Pp,'g');
+hold on
+plot(delta,net_Pr,'r');
+hold on
+plot(delta,net_Pe,'b');
+title('Power angle curve for salient pole synchronous machine');
+legend('Active power','Reluctance power','Salient power');
+else
+plot(delta,net_Pe,'b');
+title('Power angle curve for non-salient pole synchronous machine');
+legend('Active power');
+end
+xlabel('Delta in degrees-->');
+ylabel('Three phase power in MW -->');
+grid;
+fprintf('\n\nOutput values are:\n');
+fprintf('Excitation emf is %0.2f kV\n',abs(Ef_mag)/1000);
+fprintf('Regulation is %0.2f %%\n',reg);
+fprintf('Maximum electrical power is %0.2f MW\n',max(net_Pe));
+fprintf('Angle at which power is maximum is %0.2f degrees\n\n',dmax)
