@@ -1,0 +1,87 @@
+clc
+clear
+a=exp(1j*2*pi/3); % Operator for rotating a vector by 120 degrees
+A=[1 1 1;1 a^2 a;1 a a^2]; % Symmetrical components 
+transformation matrix
+z1=0.875i; % Positive sequence impedance
+z2=0.575i; % Negative sequence impedance
+z0=0.45i; % Zero sequence impedance
+zf=0; % Fault impedance
+E=1; % Voltage at fault point
+MVA_base=50; % 50 MVA
+v_line=110; % 110 kV
+c=input('Enter type of fault.\n\nFor SLG fault, enter 1,\nFor LL,enter 2,\nFor DLG, enter 3,\nFor 3 phase fault, enter 4: ');
+fprintf('------------------------------------------\n');
+switch c
+case 1
+fprintf('\nSingle Line to Ground fault:\n\n');
+I_fault=3*(E/(z1+z2+z0+3*zf));
+I_fault_mag=abs(I_fault);
+Ia1=I_fault/3;
+Ia0=Ia1;
+Ia2=Ia1;
+Va1=E-z1*Ia1;
+Va2=-z2*Ia2;
+Va0=-z0*Ia0;
+case 2
+fprintf('\nLine to Line fault:\n\n');
+Ia1=E/(z1+z2+zf);
+I_fault=-1j*sqrt(3)*Ia1;
+I_fault_mag=abs(I_fault);
+Ia2=-Ia1;
+Ia0=0;
+Va1=E-z1*Ia1;
+Va2=z2*Ia1;
+Va0=0;
+case 3
+fprintf('\nDouble Line to Ground fault:\n\n');
+Ia1=(E/(z1+((z2*(z0+3*zf))/(z0+z2+3*zf))));
+Ia2=-Ia1*((z0+3*zf)/(z0+z2+3*zf));
+Ia0=-Ia1*(z2/(z0+z2+3*zf));
+I_fault=3*Ia0;
+I_fault_mag=abs(I_fault);
+Va1=E-z1*Ia1;
+Va2=-z2*Ia2;
+Va0=Va1+3*zf*Ia0;
+case 4
+fprintf('\n3 phase fault:\n');
+I_fault=(E/z1);
+I_fault_mag=abs(I_fault);
+otherwise
+fprintf('Wrong entry\n\n');
+return;
+end
+%--------Calculation of actual current--------------------
+I_base=((MVA_base)/sqrt(3)/v_line);
+I_actual=abs(I_fault*I_base);
+fprintf('Fault current in pu is %f\n',I_fault_mag);
+fprintf('Actual value of fault current in kA is %f\n\n',I_actual);
+%--------Display of values for faults other than 3 phase fault---------
+if c~=4
+I_sequence=[Ia0;Ia1;Ia2]; % Symmetrical components current 
+vector
+V_sequence=[Va0;Va1;Va2]; % Symmetrical components voltage 
+vector
+IL=A*I_sequence; % Phase current vector (matrix)
+Vp=A*V_sequence; % Phase voltage vector
+Vab = Vp(1)-Vp(2); % Vab=Va-Vb
+Vbc = Vp(2)-Vp(3); % Vbc=Vb-Vc
+Vca = Vp(3)-Vp(1); % Vca=Vc-Va
+Vba = -Vab;
+Vcb = -Vbc;
+Vac = -Vca;
+disp('Zero, Positive, Negative sequence currents - Ia0, Ia1, Ia2 are:');
+disp(I_sequence);
+disp('Zero, Positive, Negative sequence voltages - Va0, Va1, Va2 are:');
+disp(V_sequence);
+disp('Line currents at the fault points- Ia, Ib, Ic are');
+disp(IL);
+disp('Line to ground voltages - Va, Vb, Vc are');
+disp(Vp);
+disp('Line to line voltage, Vab is');
+disp(Vab);
+disp('Line to line voltage, Vca is');
+disp(Vca);
+disp('Line to line voltage, Vbc is');
+disp(Vbc);
+end
