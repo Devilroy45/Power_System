@@ -1,0 +1,64 @@
+clear
+clc
+a=0:0.01:180;
+Pm=input('Enter maximum power: ');
+b=Pm*sind(a);
+Ps1=input('Enter initial input power: ');
+Ps2=input('Enter increased input power: ');
+d0_d=asind(Ps1/Pm);
+d0=asin(Ps1/Pm); % Initial angle, d0 in 
+radians
+d1_d=asind(Ps2/Pm);
+d1=asin(Ps2/Pm); % d1 in radians
+d2=pi-d1; % Maximum angle, d2 in 
+radians
+d2_d=d2*180/pi;
+%---------------Area--------------------------
+a1_rect=Ps2*(d1-d0);
+a1_curve=Pm*(cos(d0)-cos(d1));
+A1=a1_rect-a1_curve;
+a2_curve=Pm*(cos(d1)-cos(d2));
+a2_rect=Ps2*(d2-d1);
+A2=a2_curve-a2_rect;
+%------------Output---------------------------
+fprintf('\nInitial angle is %0.2f degrees, or %0.3f radians', d0_d,d0);
+fprintf('\nIncreased angle is %0.2f degrees, or %0.3f radians', d1_d,d1);
+fprintf('\nMaximum angle is %0.2f degrees, or %0.3f radians', d2_d,d2);
+fprintf('\n\nArea A1 is %f, A2 is %f',A1,A2);
+if A1<=A2
+fprintf('\n\tSystem is stable\n\n');
+else
+fprintf('\n\tSystem is unstable\n\n');
+end
+%------------Plot curves----------------------
+st_Ps1=[0 200];
+ed_Ps1=[Ps1 Ps1]; % Initial input line
+st_Ps2=[0 200];
+ed_Ps2=[Ps2 Ps2]; % Increased input 
+line
+st_d0=[d0_d d0_d];
+ed_d0=[0 Ps2]; % d0 line
+st_d1=[d1_d d1_d];
+ed_d1=[0 Ps2]; % d1 line
+st_d2=[d2_d d2_d];
+ed_d2=[0 Ps2]; % d2 line
+plot(a,b,'r', st_Ps1,ed_Ps1,'g', st_Ps2,ed_Ps2,'c', st_d0,ed_d0,'b',st_d1,ed_d1,'b', st_d2,ed_d2,'b');
+hold on
+axis([0 180 0 Pm*1.1]);
+grid
+title('Equal-area criterion applied to thesudden increase in input');
+xlabel('Power angle, degree');
+ylabel('Power');
+%--------------Fill-----------------------------
+a1_x=d0_d:0.01:d1_d;
+a1_y=Pm*sind(a1_x);
+a1_x1=[d0_d a1_x d1_d];
+a1_y1=[Ps2 a1_y Ps2];
+a1_color=[1 0 1];
+fill(a1_x1,a1_y1,'b'); % Fill area A1
+a2_x=d1_d:0.01:d2_d;
+a2_y=Pm*sind(a2_x);
+a2_x1=[d1_d a2_x d2_d];
+a2_y1=[Ps2 a2_y Ps2];
+fill(a2_x1,a2_y1,'m'); % Fill area A2
+%---------End of program-----------------
